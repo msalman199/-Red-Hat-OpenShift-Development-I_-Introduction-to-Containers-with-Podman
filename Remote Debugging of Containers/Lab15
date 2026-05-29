@@ -1,0 +1,98 @@
+Remote Debugging of Containers
+Objectives
+By the end of this lab, you will be able to:
+
+Set up remote debugging for containers without rebuilding images.
+Expose debug ports for remote debugging.
+Mount source code directory into a container for live updates.
+Connect an IDE debugger (VS Code) to a running container.
+Prerequisites
+Basic understanding of containers and Podman/Docker.
+Podman or Docker installed (Podman preferred for OpenShift compatibility).
+VS Code installed with the "Remote - Containers" extension.
+A sample application (e.g., a Flask or Node.js app) for debugging.
+Lab Tasks
+Task 1: Expose Debug Ports
+Objective: Configure a container to expose debugging ports for remote connections.
+
+Subtask 1.1: Identify Debug Port for Your Application
+Different languages use different default debug ports:
+Node.js: 9229 (for --inspect flag)
+Python: 5678 (for debugpy)
+Java: 5005 (for JDWP)
+Subtask 1.2: Run Container with Debug Port Exposed
+Use the following command to start a container with the debug port exposed:
+
+podman run -d -p 3000:3000 -p 9229:9229 --name debug-container my-node-app
+-p 9229:9229 exposes the Node.js debug port.
+Replace my-node-app with your application image.
+Expected Outcome:
+
+The container runs with the application and debug port accessible.
+Troubleshooting:
+
+If the port is already in use, change the host port (e.g., -p 9230:9229).
+Task 2: Mount Source Code for Live Debugging
+Objective: Attach local source code to the container for real-time debugging.
+
+Subtask 2.1: Run Container with Volume Mount
+Use the -v flag to mount your local source code into the container:
+
+podman run -d -p 3000:3000 -p 9229:9229 -v $(pwd):/app --name debug-container my-node-app
+$(pwd):/app mounts the current directory to /app in the container.
+Subtask 2.2: Verify Mounted Files
+Enter the container and check if files are accessible:
+
+podman exec -it debug-container ls /app
+Expected Outcome:
+
+You should see your local files inside the container.
+Troubleshooting:
+
+If files are missing, ensure the path is correct.
+Task 3: Connect IDE Debugger to Container
+Objective: Attach VS Code to the container for interactive debugging.
+
+Subtask 3.1: Install VS Code Remote Debugging Tools
+Install the Remote - Containers extension in VS Code.
+For Node.js, install the Debugger for Node.js extension.
+Subtask 3.2: Attach Debugger to Running Container
+Open VS Code and go to the Run and Debug panel.
+
+Click Create a launch.json file and select Node.js.
+
+Modify the launch.json to include:
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Container",
+      "address": "localhost",
+      "port": 9229,
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "/app"
+    }
+  ]
+}
+Start debugging by clicking the green play button.
+
+Expected Outcome:
+
+VS Code connects to the container, and breakpoints work.
+Troubleshooting:
+
+If the debugger doesn’t attach, verify the port and container status.
+Conclusion
+In this lab, you learned how to:
+
+Expose debug ports in a container.
+Mount source code for live debugging.
+Connect VS Code to a running container for remote debugging.
+This approach avoids rebuilding images and speeds up debugging workflows.
+
+Next Steps
+Experiment with different languages (Python, Java).
+Explore debugging in Kubernetes/OpenShift environments.
