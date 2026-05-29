@@ -1,0 +1,104 @@
+Troubleshooting Containers
+Objectives
+By the end of this lab, you will be able to:
+
+Diagnose container failures using logs and inspect commands
+View container logs with filters
+Inspect container state
+Use exec to debug inside a running container
+Prerequisites
+Basic understanding of command-line interface (CLI)
+Podman or Docker installed (Podman recommended for OpenShift compatibility)
+A running container (we'll create one for the lab)
+Lab Setup
+Install Podman (if not already installed):
+
+sudo dnf install -y podman  # For RHEL/CentOS/Fedora
+sudo apt-get install -y podman  # For Debian/Ubuntu
+Pull a sample container image:
+
+podman pull docker.io/library/nginx:alpine
+Run a test container:
+
+podman run -d --name nginx-test -p 8080:80 nginx:alpine
+Task 1: View Container Logs with Filters
+Subtask 1.1: View Basic Logs
+Check container logs:
+
+podman logs nginx-test
+Expected Output: Displays the Nginx access/error logs.
+View logs in real-time:
+
+podman logs -f nginx-test
+Expected Outcome: Logs stream continuously until you press Ctrl+C.
+Subtask 1.2: Filter Logs by Time
+View logs since a specific time:
+
+podman logs --since 5m nginx-test
+Explanation: Shows logs from the last 5 minutes.
+View last N lines:
+
+podman logs --tail 10 nginx-test
+Expected Outcome: Displays the last 10 log entries.
+Troubleshooting Tip
+If logs are empty, ensure the container is running (podman ps).
+Task 2: Inspect Container State
+Subtask 2.1: Check Container Status
+List running containers:
+
+podman ps
+Expected Output: Shows nginx-test in the list.
+Inspect detailed container state:
+
+podman inspect nginx-test
+Key Fields to Observe:
+State": Running, ExitCode, Error
+Config: Environment variables, entrypoint
+NetworkSettings: IP address, ports
+Subtask 2.2: Check Resource Usage
+View container stats:
+podman stats nginx-test
+Expected Outcome: Live CPU, memory, and network usage.
+Troubleshooting Tip
+If a container is stuck, use podman stop and restart it.
+Task 3: Use exec to Debug Inside Container
+Subtask 3.1: Enter Container Shell
+Open an interactive shell:
+
+podman exec -it nginx-test /bin/sh
+Explanation: This drops you into the container's shell.
+Check running processes:
+
+ps aux
+Expected Output: Shows Nginx and other processes.
+Subtask 3.2: Debug Service Issues
+Check Nginx config:
+
+cat /etc/nginx/nginx.conf
+Expected Outcome: Displays the Nginx configuration.
+Test Nginx connectivity:
+
+curl localhost
+Expected Output: Returns the default Nginx welcome page.
+Troubleshooting Tip
+If /bin/sh fails, try /bin/bash (if available in the container).
+Conclusion
+In this lab, you learned how to:
+
+View and filter container logs for debugging.
+Inspect container state and resource usage.
+Use exec to troubleshoot inside a running environment.
+Next Steps
+Practice debugging a misconfigured container (e.g., one that crashes on startup).
+Explore podman system df to check disk usage by containers.
+Cleanup
+podman stop nginx-test
+podman rm nginx-test
+Lab Completion Checklist:
+
+ Viewed container logs with filters
+ Inspected container state
+ Used exec to debug inside a container
+Feedback:
+How would you rate this lab? (Easy/Medium/Hard)
+What challenges did you face?
