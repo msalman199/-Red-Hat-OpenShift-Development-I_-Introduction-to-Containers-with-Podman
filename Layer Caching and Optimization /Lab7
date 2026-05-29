@@ -1,0 +1,153 @@
+
+
+Start Lab
+Connect
+Delete Lab
+SSH Access
+
+Video
+Lab Material
+Lab 7: Layer Caching and Optimization
+Objectives
+Understand Docker/Podman layer caching mechanism
+Learn techniques to optimize image layers
+Analyze layer sizes and build efficiency
+Implement best practices for image building
+Prerequisites
+Podman or Docker installed (Podman recommended for OpenShift)
+Basic understanding of Dockerfile syntax
+Terminal/shell access
+Internet connection for pulling base images
+Setup Requirements
+Ensure Podman is installed:
+
+podman --version
+(If not installed, follow official installation docs for your OS)
+
+Create a working directory:
+
+mkdir layer-optimization-lab && cd layer-optimization-lab
+Task 1: Create Initial Dockerfile
+Subtask 1.1: Create Non-optimized Dockerfile
+Create a file named Dockerfile.initial:
+
+FROM ubuntu:22.04
+RUN apt-get update
+RUN apt-get install -y curl wget
+RUN apt-get install -y python3 python3-pip
+RUN pip install flask
+COPY app.py /app/
+WORKDIR /app
+CMD ["python3", "app.py"]
+Create a simple app.py:
+
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "Hello from optimized container!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+Subtask 1.2: Build Initial Image
+Build the image:
+
+podman build -t myapp:initial -f Dockerfile.initial .
+Check image size:
+
+podman images myapp:initial
+Expected Outcome: You'll see the image size (likely several hundred MB) and multiple layers created.
+
+Task 2: Optimize the Dockerfile
+Subtask 2.1: Layer Consolidation
+Create Dockerfile.optimized:
+FROM ubuntu:22.04
+RUN apt-get update && \
+    apt-get install -y curl wget python3 python3-pip && \
+    pip install flask && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+COPY app.py /app/
+WORKDIR /app
+CMD ["python3", "app.py"]
+Key Concept: Combining RUN commands reduces layers and cleanup within same layer minimizes final image size.
+
+Subtask 2.2: Build Optimized Image
+Build the optimized image:
+
+podman build -t myapp:optimized -f Dockerfile.optimized .
+Compare sizes:
+
+podman images myapp:*
+podman images myapp:optimized
+Expected Outcome: The optimized image should be smaller due to layer consolidation and cleanup.
+
+Task 3: Leverage Build Cache
+Subtask 3.1: Understand Cache Behavior
+Modify app.py (add a comment)
+Rebuild with cache:
+podman build -t myapp:optimized -f Dockerfile.optimized .
+Observation: Notice which steps are taken from cache and which are rebuilt.
+
+Subtask 3.2: Cache-Busting Techniques
+Add a cache-busting layer:
+
+ARG CACHEBUST=1
+RUN echo "Cache bust: $CACHEBUST"
+Rebuild with different cache-bust value:
+
+podman build -t myapp:optimized --build-arg CACHEBUST=$(date +%s) -f Dockerfile.optimized .
+Troubleshooting Tip: If cache isn't working as expected, use --no-cache flag to force full rebuild.
+
+Task 4: Inspect Layers
+Subtask 4.1: View Layer History
+Inspect image layers:
+podman history myapp:optimized
+podman inspect myapp:optimized
+Subtask 4.2: Analyze Layer Sizes
+Use dive tool (install if needed):
+sudo apt-get install dive
+dive myapp:optimized
+Key Concept: Dive shows each layer's contents and size, helping identify optimization opportunities.
+
+Task 5: Advanced Optimization
+Subtask 5.1: Multi-stage Builds
+Create Dockerfile.multistage:
+
+# Build stage
+FROM ubuntu:22.04 as builder
+RUN apt-get update && apt-get install -y python3 python3-pip
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Runtime stage
+FROM ubuntu:22.04
+COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
+COPY app.py /app/
+WORKDIR /app
+CMD ["python3", "app.py"]
+Build multi-stage image:
+
+podman build -t myapp:multistage -f Dockerfile.multistage .
+Expected Outcome: Final image contains only runtime components, significantly reducing size.
+
+Conclusion
+Key Takeaways
+Layer consolidation reduces image layers and size
+Proper layer ordering maximizes cache efficiency
+Multi-stage builds eliminate build-time dependencies
+Regular layer inspection helps maintain optimal builds
+Verification
+Run your optimized container:
+
+podman run -d -p 8080:8080 myapp:optimized
+curl localhost:8080
+Verify all optimizations worked by comparing all image sizes:
+
+podman images myapp:*
+Further Exploration
+Experiment with different base images (Alpine, distroless)
+Try Buildah for more advanced build scenarios
+Explore podman's --layers and --squash options
+Final Note: Always balance optimization with maintainability - over-optimization can make Dockerfiles harder to understand and maintain.
