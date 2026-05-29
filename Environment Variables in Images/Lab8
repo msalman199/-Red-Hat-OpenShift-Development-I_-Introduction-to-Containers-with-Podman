@@ -1,0 +1,100 @@
+ Environment Variables in Images
+Objectives
+By the end of this lab, you will be able to:
+
+Use ENV and ARG instructions in Containerfiles to manage configuration
+Define environment variables in container images
+Override environment variables at runtime
+Inspect environment variables in running containers
+Prerequisites
+Basic Linux command line knowledge
+Podman or Docker installed (Podman recommended for OpenShift alignment)
+Text editor (Vim, Nano, or VS Code)
+Internet access to pull base images
+Setup Requirements
+Ensure Podman is installed:
+sudo dnf install podman  # For RHEL/Fedora
+Verify installation:
+podman --version
+Task 1: Define Environment Variables in Containerfile
+Subtask 1.1: Create a Basic Containerfile
+Create a new directory for the lab:
+mkdir env-lab && cd env-lab
+Create a Containerfile:
+cat <<EOF > Containerfile
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+ENV APP_NAME="MyApp" \
+    APP_VERSION="1.0" \
+    APP_ENV="development"
+CMD echo "Running \$APP_NAME v\$APP_VERSION in \$APP_ENV mode"
+EOF
+Subtask 1.2: Build and Run the Image
+Build the image:
+podman build -t env-demo .
+Run the container:
+podman run env-demo
+Expected Output:
+Running MyApp v1.0 in development mode
+Task 2: Override Environment Variables at Runtime
+Subtask 2.1: Override Using Command Line
+Run the container with overridden variables:
+podman run -e APP_ENV="production" -e APP_VERSION="2.0" env-demo
+Expected Output:
+Running MyApp v2.0 in production mode
+Subtask 2.2: Use Environment Files
+Create an environment file:
+cat <<EOF > app.env
+APP_NAME=ProductionApp
+APP_VERSION=3.0
+APP_ENV=staging
+EOF
+Run with the environment file:
+podman run --env-file=app.env env-demo
+Expected Output:
+Running ProductionApp v3.0 in staging mode
+Task 3: Inspect Variables in Running Containers
+Subtask 3.1: View Environment Variables
+Run the container in detached mode:
+podman run -d --name env-container env-demo
+Inspect the environment variables:
+podman exec env-container env
+Expected Output (partial):
+APP_NAME=MyApp
+APP_VERSION=1.0
+APP_ENV=development
+Subtask 3.2: Use ARG for Build-Time Variables
+Modify the Containerfile:
+cat <<EOF > Containerfile
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+ARG APP_BUILD_NUMBER
+ENV APP_BUILD=\$APP_BUILD_NUMBER
+CMD echo "Build number: \$APP_BUILD"
+EOF
+Build with build argument:
+podman build --build-arg APP_BUILD_NUMBER=42 -t arg-demo .
+Run the container:
+podman run arg-demo
+Expected Output:
+Build number: 42
+Troubleshooting Tips
+If variables don't appear: Verify correct syntax (no spaces around = in ENV)
+For ARG issues: Ensure build arguments are passed with --build-arg
+Permission errors: Run Podman with sudo if needed (not recommended for production)
+Conclusion
+In this lab, you've learned to:
+
+Define persistent environment variables using ENV in Containerfiles
+Override environment variables at runtime using -e and --env-file
+Inspect environment variables in running containers
+Use build-time arguments with ARG for flexible image builds
+These skills are essential for configuring containerized applications in OpenShift and other Kubernetes environments.
+
+Next Steps
+Experiment with multi-stage builds using ARG
+Explore how OpenShift uses environment variables in Deployments
+Practice using ConfigMaps and Secrets with environment variables
+Cleanup
+Remove all lab containers:
+
+podman rm -f $(podman ps -aq)
+podman rmi env-demo arg-demo
