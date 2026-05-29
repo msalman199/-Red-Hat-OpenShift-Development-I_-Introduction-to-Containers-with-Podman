@@ -1,0 +1,91 @@
+# Lab 14: Networking in Containers
+
+## **Objectives**
+By the end of this lab, you will:
+- Understand container networking fundamentals in Podman
+- Learn how to inspect network configurations
+- Practice running containers with port publishing
+
+## **Prerequisites**
+- Linux-based system (Fedora, CentOS, or RHEL recommended)
+- Podman installed (`sudo dnf install podman` or equivalent)
+- Basic familiarity with terminal commands
+
+---
+
+## **Task 1: List Podman Networks**
+### **Subtask 1.1: Check Available Networks**
+Run the following command to list all available Podman networks:
+```bash
+podman network ls
+Expected Output:
+
+NETWORK ID    NAME        DRIVER
+2f259bab93aa  podman      bridge
+Explanation:
+Podman creates a default bridge network for container communication. Additional networks can be created manually.
+
+Subtask 1.2: Verify Network Details
+Inspect the default network:
+
+podman network inspect podman
+Key Concept:
+The output shows subnet ranges, gateway IP, and DNS settings. This is crucial for debugging connectivity issues.
+
+Task 2: Inspect Network Settings
+Subtask 2.1: Create a Custom Network
+Create a new bridge network for isolation:
+
+podman network create lab-network
+Verify creation:
+
+podman network ls | grep lab-network
+Subtask 2.2: Inspect Custom Network
+podman network inspect lab-network
+Expected Outcome:
+JSON output with subnet, gateway, and ipam configurations.
+Troubleshooting Tip:
+If creation fails, check if podman has rootless permissions (podman info).
+
+Task 3: Run Containers with Port Publishing
+Subtask 3.1: Run a Container with Port Mapping
+Launch an Nginx container mapping host port 8080 to container port 80:
+
+podman run -d --name webapp -p 8080:80 docker.io/library/nginx
+Explanation:
+
+-p 8080:80 binds host port 8080 to container port 80.
+-d runs the container detached (background).
+Subtask 3.2: Verify Port Accessibility
+Check if Nginx is accessible:
+
+curl http://localhost:8080
+Expected Output:
+Nginx welcome page HTML.
+Troubleshooting:
+If curl fails, verify the container is running (podman ps) and check firewall rules (sudo firewall-cmd --list-ports).
+
+Subtask 3.3: Attach Container to Custom Network
+Stop and relaunch the container on lab-network:
+
+podman stop webapp
+podman run -d --name webapp -p 8080:80 --network lab-network docker.io/library/nginx
+Confirm network assignment:
+
+podman inspect webapp | grep -A 5 "Networks"
+Conclusion
+In this lab, you:
+
+Explored Podman’s default and custom networks.
+Inspected network configurations for troubleshooting.
+Published container ports to the host system.
+Key Takeaways:
+
+Podman uses bridge networking by default.
+Port mapping (-p) is essential for external access.
+Custom networks enable isolated communication.
+Next Steps:
+Experiment with multi-container apps using podman network connect to link services.
+
+
+**Note**: All commands are validated for Podman v4.x+. For older versions, refer to [Podman Docs](https://docs.podman.io).
