@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  web:
+    image: docker.io/nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+  db:
+    image: docker.io/postgres:13
+    environment:
+      POSTGRES_PASSWORD: example
